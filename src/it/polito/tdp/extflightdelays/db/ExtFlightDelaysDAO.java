@@ -7,9 +7,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import it.polito.tdp.extflightdelays.model.Airline;
 import it.polito.tdp.extflightdelays.model.Airport;
+import it.polito.tdp.extflightdelays.model.ArcoPeso;
 import it.polito.tdp.extflightdelays.model.Flight;
 
 public class ExtFlightDelaysDAO {
@@ -37,7 +39,7 @@ public class ExtFlightDelaysDAO {
 		}
 	}
 
-	public List<Airport> loadAllAirports() {
+	public List<Airport> loadAllAirports(Map<Integer, Airport> idMap) {
 		String sql = "SELECT * FROM airports";
 		List<Airport> result = new ArrayList<Airport>();
 
@@ -51,6 +53,7 @@ public class ExtFlightDelaysDAO {
 						rs.getString("CITY"), rs.getString("STATE"), rs.getString("COUNTRY"), rs.getDouble("LATITUDE"),
 						rs.getDouble("LONGITUDE"), rs.getDouble("TIMEZONE_OFFSET"));
 				result.add(airport);
+				idMap.put(airport.getId(), airport);
 			}
 
 			conn.close();
@@ -80,6 +83,36 @@ public class ExtFlightDelaysDAO {
 						rs.getDouble("ELAPSED_TIME"), rs.getInt("DISTANCE"),
 						rs.getTimestamp("ARRIVAL_DATE").toLocalDateTime(), rs.getDouble("ARRIVAL_DELAY"));
 				result.add(flight);
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+	
+	public List<ArcoPeso> getConnessioni(Integer numCompagnie) {
+		String sql = "select f.destination_airport_id as v2, f.origin_airport_id as v1, count(distinct(f.id)) as peso " + 
+				"from airports a, flights f " + 
+				"where a.id = f.destination_airport_id or a.id = f.origin_airport_id " + 
+				"group by a.id " + 
+				"having count(distinct(f.airline_id)) >= ? ";
+		List<ArcoPeso> result = new ArrayList<>();
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, numCompagnie);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				result.add(new ArcoPeso(
+						rs.getInt("v1"),
+						rs.getInt("v2"),
+						rs.getDouble("peso")));
 			}
 
 			conn.close();

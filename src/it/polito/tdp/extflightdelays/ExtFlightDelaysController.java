@@ -7,6 +7,8 @@ package it.polito.tdp.extflightdelays;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.extflightdelays.model.AeroportoPeso;
+import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,7 +37,7 @@ public class ExtFlightDelaysController {
     private Button btnAnalizza; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbBoxAeroportoPartenza"
-    private ComboBox<?> cmbBoxAeroportoPartenza; // Value injected by FXMLLoader
+    private ComboBox<Airport> cmbBoxAeroportoPartenza; // Value injected by FXMLLoader
 
     @FXML // fx:id="btnAeroportiConnessi"
     private Button btnAeroportiConnessi; // Value injected by FXMLLoader
@@ -51,12 +53,28 @@ public class ExtFlightDelaysController {
 
     @FXML
     void doAnalizzaAeroporti(ActionEvent event) {
-
+    	try {
+    		Integer numCompagnie = Integer.parseInt(compagnieMinimo.getText());
+    		this.model.creaGrafo(numCompagnie);
+    		txtResult.appendText(String.format("Grafo creato di %d vertici con %d archi\n", this.model.getVertici(), this.model.getArchi()));
+    		cmbBoxAeroportoPartenza.getItems().addAll(this.model.getAeroporti());
+    		
+    	}catch(NumberFormatException e) {
+    		
+    	}
     }
 
     @FXML
     void doCalcolaAeroportiConnessi(ActionEvent event) {
-
+    	
+    	Integer aeroporto = cmbBoxAeroportoPartenza.getValue().getId();
+    	if(aeroporto == null) {
+    		txtResult.appendText("Si deve selezionare un aeroporto\n");
+    	}
+  
+    	for(AeroportoPeso tmp:this.model.getAdiacenti(aeroporto)) {
+    		txtResult.appendText("Adiacente: "+ tmp.getAeroporto()+ " con peso= "+ tmp.getPeso());
+    	}
     }
 
     @FXML
